@@ -360,7 +360,7 @@
     <div class="topbar">
       <div class="topbar-title" id="viewTitle">すべてのリマインダー</div>
       <div class="topbar-actions">
-        <button class="btn btn-ghost" onclick="requestNotifPermission()">🔔 通知を有効化</button>
+        <button class="btn btn-ghost" onclick="requestNotifPermission()">🔔 ブラウザ通知を有効化</button>
         <button class="btn btn-primary" onclick="openModal()">＋ 追加</button>
       </div>
     </div>
@@ -473,9 +473,6 @@
 <!-- SUPABASE SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- ONESIGNAL SDK -->
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-
 <script>
 // ===== SUPABASE INIT =====
 let supabase = null;
@@ -488,12 +485,16 @@ if (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL && SUPABASE_URL !== 'YOU
   } catch(e) { console.warn('Supabase init failed, using localStorage', e); }
 }
 
-// ===== ONESIGNAL INIT =====
-if (typeof ONESIGNAL_APP_ID !== 'undefined' && ONESIGNAL_APP_ID && ONESIGNAL_APP_ID !== 'YOUR_ONESIGNAL_APP_ID') {
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({ appId: ONESIGNAL_APP_ID, welcomeNotification: { disable: true } });
-  });
+// ===== NTFY.SH 通知送信 =====
+async function sendNtfyNotification(title, body) {
+  if (typeof NTFY_TOPIC === 'undefined' || !NTFY_TOPIC || NTFY_TOPIC === 'YOUR_NTFY_TOPIC') return;
+  try {
+    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+      method: 'POST',
+      headers: { 'Title': encodeURIComponent(title), 'Content-Type': 'text/plain; charset=utf-8' },
+      body: body || title,
+    });
+  } catch(e) { console.warn('Ntfy送信失敗:', e); }
 }
 
 // ===== STATE =====
@@ -761,10 +762,15 @@ function scheduleLocalNotifications() {
     const diff = dt - now;
     if (diff > 0 && diff < 7 * 24 * 60 * 60 * 1000) { // 7日以内
       const t = setTimeout(() => {
-        new Notification('📌 ' + r.title, {
-          body: r.note || r.category,
-          icon: 'icon-192.png',
-        });
+        // ブラウザ通知
+        if (Notification.permission === 'granted') {
+          new Notification('📌 ' + r.title, {
+            body: r.note || r.category,
+            icon: 'icon-192.png',
+          });
+        }
+        // Ntfy通知（iPhoneにも届く）
+        sendNtfyNotification('📌 ' + r.title, r.note || r.category || '');
       }, diff);
       scheduledTimers.push(t);
     }
