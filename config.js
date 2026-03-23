@@ -5,8 +5,8 @@
 
 // ── Supabase ──────────────────────────────────────────────
 // Supabase ダッシュボード → Settings → API から取得
-const SUPABASE_URL      = 'YOUR_SUPABASE_URL';       // 例: https://xxxxxxxx.supabase.co
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';  // 例: eyJhbGciOiJI...
+const SUPABASE_URL      = 'https://kgnznqxmnshklydnzmcq.supabase.co';       // 例: https://xxxxxxxx.supabase.co
+const SUPABASE_ANON_KEY = 'sb_publishable_-ObINkRA9_bz0Yi6dvoXPA_5JP6tj4P';  // 例: eyJhbGciOiJI...
 
 // ── OneSignal ─────────────────────────────────────────────
 // OneSignal ダッシュボード → Settings → Keys & IDs から取得
