@@ -475,14 +475,16 @@
 
 <script>
 // ===== SUPABASE INIT =====
-let supabase = null;
+let supabaseClient = null;
 let useLocalStorage = true;
 
-if (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-  try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    useLocalStorage = false;
-  } catch(e) { console.warn('Supabase init failed, using localStorage', e); }
+function initSupabase() {
+  if (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      useLocalStorage = false;
+    } catch(e) { console.warn('Supabase init failed, using localStorage', e); }
+  }
 }
 
 // ===== NTFY.SH 通知送信 =====
@@ -516,7 +518,7 @@ async function loadReminders() {
   if (useLocalStorage) {
     reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
   } else {
-    const { data, error } = await supabase.from('reminders').select('*').order('datetime', { ascending: true });
+    const { data, error } = await supabaseClient.from('reminders').select('*').order('datetime', { ascending: true });
     if (!error && data) reminders = data;
   }
   renderAll();
@@ -530,7 +532,7 @@ async function saveToStorage(reminder) {
     else reminders.push(reminder);
     localStorage.setItem('reminders', JSON.stringify(reminders));
   } else {
-    const { error } = await supabase.from('reminders').upsert(reminder);
+    const { error } = await supabaseClient.from('reminders').upsert(reminder);
     if (error) { showToast('保存エラー: ' + error.message, '❌'); return; }
   }
   await loadReminders();
@@ -541,7 +543,7 @@ async function deleteFromStorage(id) {
     reminders = reminders.filter(r => r.id !== id);
     localStorage.setItem('reminders', JSON.stringify(reminders));
   } else {
-    const { error } = await supabase.from('reminders').delete().eq('id', id);
+    const { error } = await supabaseClient.from('reminders').delete().eq('id', id);
     if (error) { showToast('削除エラー: ' + error.message, '❌'); return; }
   }
   await loadReminders();
@@ -801,8 +803,11 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 });
 
 // ===== INIT =====
-loadReminders();
-updateNotifStatus();
+document.addEventListener('DOMContentLoaded', () => {
+  initSupabase();
+  loadReminders();
+  updateNotifStatus();
+});
 </script>
 </body>
 </html>
